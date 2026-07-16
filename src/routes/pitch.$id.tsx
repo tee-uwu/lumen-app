@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/hooks/use-auth";
 import { useState } from "react";
 import { toast } from "sonner";
-import { Coins, Rocket, ShieldCheck, HeartHandshake, Clock, MapPin, Globe, Linkedin, Bookmark } from "lucide-react";
+import { Coins, Rocket, ShieldCheck, HeartHandshake, Clock, MapPin, Globe, Linkedin, Bookmark, Trash2 } from "lucide-react";
 import MDEditor from '@uiw/react-md-editor';
 
 export const Route = createFileRoute("/pitch/$id")({
@@ -52,6 +52,29 @@ function PitchDetail() {
       if (error) throw error;
       return data as unknown as Pitch & { pitch_members: { user_id: string }[] } | null;
     },
+  });
+
+  const { data: isAdmin } = useQuery({
+    queryKey: ["is-admin", user?.id],
+    queryFn: async () => {
+      if (!user) return false;
+      const { data } = await supabase.from("user_roles").select("role").eq("user_id", user.id).eq("role", "admin").maybeSingle();
+      return !!data;
+    },
+    enabled: !!user,
+  });
+
+  const deletePitch = useMutation({
+    mutationFn: async () => {
+      if (!isAdmin) throw new Error("Unauthorized");
+      const { error } = await supabase.from("pitches").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Pitch deleted");
+      navigate({ to: "/explore" });
+    },
+    onError: (e: Error) => toast.error(e.message),
   });
 
   if (isLoading) {
@@ -107,6 +130,16 @@ function PitchDetail() {
               {canAccessWorkspace && (
                 <Button asChild size="sm">
                   <Link to="/pitches/$id/workspace" params={{ id: data.id }}>Go to Workspace</Link>
+                </Button>
+              )}
+              {isAdmin && (
+                <Button size="sm" variant="destructive" onClick={() => {
+                  if (confirm("Are you sure you want to delete this pitch? This action cannot be undone.")) {
+                    deletePitch.mutate();
+                  }
+                }} disabled={deletePitch.isPending}>
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Delete (Admin)
                 </Button>
               )}
             </div>

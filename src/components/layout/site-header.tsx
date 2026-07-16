@@ -4,6 +4,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
 import { Sparkles, Compass, LayoutDashboard, LogOut, PlusCircle, UserCircle2, MessageSquare } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { NotificationsBell } from "@/components/notifications-bell";
@@ -20,6 +21,15 @@ export function SiteHeader() {
     await supabase.auth.signOut();
     navigate({ to: "/auth", replace: true });
   }
+
+  const { data: profile } = useQuery({
+    queryKey: ["profile", user?.id],
+    queryFn: async () => {
+      const { data } = await supabase.from("profiles").select("avatar_url, name").eq("id", user!.id).maybeSingle();
+      return data;
+    },
+    enabled: !!user,
+  });
 
   return (
     <header className="sticky top-0 z-40 w-full border-b border-border/60 bg-background/80 backdrop-blur-xl">
@@ -59,7 +69,14 @@ export function SiteHeader() {
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="icon" className="rounded-full">
-                    <UserCircle2 className="h-6 w-6" />
+                    {profile?.avatar_url ? (
+                      <Avatar className="h-7 w-7">
+                        <AvatarImage src={profile.avatar_url} alt={profile.name || "User avatar"} />
+                        <AvatarFallback><UserCircle2 className="h-5 w-5" /></AvatarFallback>
+                      </Avatar>
+                    ) : (
+                      <UserCircle2 className="h-6 w-6" />
+                    )}
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-52">
