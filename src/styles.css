@@ -1,0 +1,135 @@
+@import "tailwindcss" source(none);
+@source "../src";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --font-sans: "Nunito", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-display: "Nunito", ui-sans-serif, system-ui, sans-serif;
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) + 12px);
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+
+  --shadow-glow: 0 0 40px -8px oklch(0.7 0.1 55 / 0.35);
+  --shadow-card: 0 8px 30px -4px rgba(0, 0, 0, 0.04), 0 4px 10px -2px rgba(0, 0, 0, 0.02);
+}
+
+:root {
+  /* Generous border radius */
+  --radius: 1rem;
+
+  /* Light Mode - Warm, cozy, soft */
+  --background: oklch(0.98 0.01 90); /* creamy off-white */
+  --foreground: oklch(0.25 0.02 240); /* dark slate */
+
+  --surface: oklch(0.99 0.005 90);
+  --surface-2: oklch(0.96 0.01 90);
+
+  --card: oklch(0.99 0.005 90);
+  --card-foreground: oklch(0.25 0.02 240);
+
+  --popover: oklch(0.99 0.005 90);
+  --popover-foreground: oklch(0.25 0.02 240);
+
+  --primary: oklch(0.72 0.12 55); /* muted peach/terracotta */
+  --primary-foreground: oklch(0.99 0 0);
+
+  --secondary: oklch(0.94 0.01 90); /* soft beige */
+  --secondary-foreground: oklch(0.3 0.02 240);
+
+  --muted: oklch(0.94 0.01 90);
+  --muted-foreground: oklch(0.5 0.02 240);
+
+  --accent: oklch(0.7 0.08 140); /* sage green */
+  --accent-foreground: oklch(0.99 0 0);
+
+  --success: oklch(0.7 0.08 140);
+  --success-foreground: oklch(0.99 0 0);
+
+  --destructive: oklch(0.65 0.15 30);
+  --destructive-foreground: oklch(0.99 0 0);
+
+  --border: oklch(0.9 0.01 90);
+  --input: oklch(0.9 0.01 90);
+  --ring: oklch(0.72 0.12 55);
+}
+
+.dark {
+  /* Dark Mode - Warm twilight gray/blue */
+  --background: oklch(0.22 0.02 260);
+  --foreground: oklch(0.95 0.01 260);
+  
+  --surface: oklch(0.26 0.02 260);
+  --surface-2: oklch(0.3 0.02 260);
+  
+  --card: oklch(0.26 0.02 260);
+  --card-foreground: oklch(0.95 0.01 260);
+  
+  --popover: oklch(0.26 0.02 260);
+  --popover-foreground: oklch(0.95 0.01 260);
+  
+  --primary: oklch(0.75 0.12 55); /* glowing soft peach */
+  --primary-foreground: oklch(0.22 0.02 260);
+  
+  --secondary: oklch(0.32 0.02 260);
+  --secondary-foreground: oklch(0.95 0.01 260);
+  
+  --muted: oklch(0.32 0.02 260);
+  --muted-foreground: oklch(0.75 0.02 260);
+  
+  --accent: oklch(0.75 0.08 140); /* soft sage */
+  --accent-foreground: oklch(0.22 0.02 260);
+  
+  --border: oklch(0.35 0.02 260);
+  --input: oklch(0.35 0.02 260);
+  --ring: oklch(0.75 0.12 55);
+}
+
+@layer base {
+  * { border-color: var(--color-border); }
+  html { font-family: var(--font-sans); -webkit-font-smoothing: antialiased; }
+  body { background: var(--color-background); color: var(--color-foreground); }
+  h1, h2, h3, h4 { font-family: var(--font-display); letter-spacing: -0.02em; }
+}
+
+@utility bg-hero-gradient {
+  background-image: radial-gradient(1200px 500px at 10% -10%, oklch(0.48 0.18 258 / 0.14), transparent 60%),
+                    radial-gradient(900px 400px at 100% 0%, oklch(0.72 0.18 42 / 0.10), transparent 55%),
+                    linear-gradient(180deg, var(--color-background), var(--color-surface));
+}
+
+@utility text-gradient-primary {
+  background: linear-gradient(90deg, oklch(0.48 0.18 258), oklch(0.6 0.17 280));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
