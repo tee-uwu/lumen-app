@@ -169,10 +169,3 @@ function PitchCard({ p }: { p: PitchRow }) {
     </Link>
   );
 }
-          </div>
-        </div>
-      </main>
-      <SiteFooter />
-    </div>
-  );
-}
