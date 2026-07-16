@@ -75,13 +75,13 @@ function Explore() {
                 <Link to="/pitches/new" className="mt-3 inline-block font-medium text-primary hover:underline">Post a pitch →</Link>
               </div>
             )}
-                <PitchCard key={p.id} p={p} />
-              ))}
+            {filtered.map((p) => (
+              <PitchCard key={p.id} p={p} />
+            ))}
             </div>
           </div>
-        </div>
-      </main>
-      <SiteFooter />
+        </main>
+        <SiteFooter />
     </div>
   );
 }
