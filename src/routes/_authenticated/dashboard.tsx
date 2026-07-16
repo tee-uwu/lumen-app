@@ -41,6 +41,36 @@ function Dashboard() {
     },
   });
 
+  const recommendedPitches = useQuery({
+    queryKey: ["recommended-pitches", user?.id],
+    enabled: !!user,
+    queryFn: async () => {
+      // 1. Get user profile skills
+      const { data: profile } = await supabase.from("profiles").select("skills").eq("id", user!.id).single();
+      if (!profile || !profile.skills || profile.skills.length === 0) return [];
+
+      // 2. Query open roles requiring those skills
+      const { data, error } = await supabase
+        .from("pitch_roles")
+        .select("pitch_id, pitches(id, title, tagline, status, created_at, pitch_roles(id, filled))")
+        .eq("filled", false)
+        .overlaps("skills", profile.skills);
+
+      if (error) throw error;
+
+      // 3. Deduplicate pitches
+      const pitchMap = new Map();
+      for (const r of data) {
+        // filter out nulls if foreign key pitch is not found or not published (though we can't filter nested table status easily in one go, we can filter in memory)
+        const p = r.pitches as any;
+        if (p && p.status === "published" && p.id) {
+          pitchMap.set(p.id, p);
+        }
+      }
+      return Array.from(pitchMap.values()) as any[];
+    },
+  });
+
   const navigate = Route.useNavigate();
   const startMessage = (userId: string) => {
     navigate({ to: "/messages", search: { user: userId } as never });
@@ -63,6 +93,7 @@ function Dashboard() {
             <TabsList>
               <TabsTrigger value="pitches">My pitches</TabsTrigger>
               <TabsTrigger value="applications">My applications</TabsTrigger>
+              <TabsTrigger value="recommended">Recommended for you</TabsTrigger>
             </TabsList>
 
             <TabsContent value="pitches" className="mt-6 space-y-3">
@@ -138,6 +169,38 @@ function Dashboard() {
                     </div>
                   </CardHeader>
                   <CardContent className="pt-0"><p className="text-sm text-muted-foreground line-clamp-2">{a.message}</p></CardContent>
+                </Card>
+              ))}
+            </TabsContent>
+
+            <TabsContent value="recommended" className="mt-6 space-y-3">
+              {recommendedPitches.isLoading && <div className="h-24 animate-pulse rounded-xl bg-card" />}
+              {recommendedPitches.data?.length === 0 && (
+                <div className="rounded-2xl border border-dashed border-border bg-card/50 p-12 text-center">
+                  <Sparkles className="mx-auto h-8 w-8 text-primary" />
+                  <p className="mt-3 font-medium">No recommendations right now</p>
+                  <p className="text-sm text-muted-foreground">Add more skills to your profile to see tailored pitch recommendations.</p>
+                  <Button asChild className="mt-4" variant="outline"><Link to="/profile">Edit Profile</Link></Button>
+                </div>
+              )}
+              {recommendedPitches.data?.map((p) => (
+                <Card key={p.id}>
+                  <CardHeader className="pb-2">
+                    <div className="flex flex-wrap items-start justify-between gap-2">
+                      <div>
+                        <Link to="/pitch/$id" params={{ id: p.id }} className="font-display text-lg font-semibold hover:underline">{p.title}</Link>
+                        {p.tagline && <p className="text-sm text-muted-foreground">{p.tagline}</p>}
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="flex items-center justify-between pt-0">
+                    <span className="text-xs text-muted-foreground">
+                      {p.pitch_roles.length} role{p.pitch_roles.length === 1 ? "" : "s"} · {p.pitch_roles.filter((r: any) => !r.filled).length} open
+                    </span>
+                    <Button asChild size="sm" variant="secondary">
+                      <Link to="/pitch/$id" params={{ id: p.id }}>View pitch</Link>
+                    </Button>
+                  </CardContent>
                 </Card>
               ))}
             </TabsContent>
