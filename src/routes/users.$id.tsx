@@ -1,13 +1,14 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { queryOptions, useSuspenseQuery, useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { SiteHeader } from "@/components/layout/site-header";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ExternalLink, MapPin, Briefcase } from "lucide-react";
+import { ExternalLink, MapPin, Briefcase, ShieldAlert } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 const userProfileQueryOptions = (id: string) => queryOptions({
   queryKey: ["user-profile", id],
@@ -52,6 +53,50 @@ function UserProfile() {
   const { id } = Route.useParams();
   const { data: { profile, founded, roles } } = useSuspenseQuery(userProfileQueryOptions(id));
   const { user } = useAuth();
+  const qc = useQueryClient();
+  const navigate = useNavigate();
+
+  const { data: isAdmin } = useQuery({
+    queryKey: ["is-admin", user?.id],
+    queryFn: async () => {
+      if (!user) return false;
+      const { data } = await supabase.from("user_roles").select("role").eq("user_id", user.id).eq("role", "admin").maybeSingle();
+      return !!data;
+    },
+    enabled: !!user,
+  });
+
+  const toggleBan = useMutation({
+    mutationFn: async () => {
+      if (!isAdmin) throw new Error("Unauthorized");
+      const newStatus = !profile.is_banned;
+      const { error } = await supabase.from("profiles").update({ is_banned: newStatus }).eq("id", profile.id);
+      if (error) throw error;
+      return newStatus;
+    },
+    onSuccess: (isBanned) => {
+      toast.success(isBanned ? "User has been banned" : "User has been unbanned");
+      qc.invalidateQueries({ queryKey: ["user-profile", id] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  if (profile.is_banned && !isAdmin && user?.id !== profile.id) {
+    return (
+      <div className="flex min-h-screen flex-col bg-muted/10">
+        <SiteHeader />
+        <main className="flex-1 grid place-items-center">
+          <div className="text-center">
+            <ShieldAlert className="mx-auto h-12 w-12 text-destructive mb-4" />
+            <h1 className="font-display text-2xl font-bold">Account Suspended</h1>
+            <p className="mt-2 text-muted-foreground">This user account has been suspended.</p>
+            <Button asChild className="mt-6"><Link to="/explore">Go back</Link></Button>
+          </div>
+        </main>
+        <SiteFooter />
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen flex-col bg-muted/10">
@@ -83,6 +128,21 @@ function UserProfile() {
               {user?.id === profile.id && (
                 <Button className="w-full rounded-full" variant="outline" asChild>
                   <Link to="/profile">Edit Profile</Link>
+                </Button>
+              )}
+              {isAdmin && user?.id !== profile.id && (
+                <Button 
+                  className="w-full rounded-full" 
+                  variant={profile.is_banned ? "default" : "destructive"} 
+                  onClick={() => {
+                    if (confirm(`Are you sure you want to ${profile.is_banned ? "unban" : "ban"} this user?`)) {
+                      toggleBan.mutate();
+                    }
+                  }}
+                  disabled={toggleBan.isPending}
+                >
+                  <ShieldAlert className="mr-2 h-4 w-4" />
+                  {profile.is_banned ? "Unban User" : "Ban User"}
                 </Button>
               )}
 

@@ -7,13 +7,26 @@ export function useAuth() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    async function checkUser(u: User | null) {
+      if (u) {
+        const { data } = await supabase.from("profiles").select("is_banned").eq("id", u.id).maybeSingle();
+        if (data?.is_banned) {
+          await supabase.auth.signOut();
+          setUser(null);
+          return;
+        }
+      }
+      setUser(u);
+    }
+
     supabase.auth.getUser().then(({ data }) => {
-      setUser(data.user);
-      setLoading(false);
+      checkUser(data.user).finally(() => setLoading(false));
     });
+
     const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
-      setUser(session?.user ?? null);
+      checkUser(session?.user ?? null);
     });
+
     return () => sub.subscription.unsubscribe();
   }, []);
 
